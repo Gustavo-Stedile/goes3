@@ -243,6 +243,14 @@ class TimeSeriesStorage(Storage):
                 search_pattern = os.path.join(
                     self.path, path_pattern, file_pattern)
             else:
-                search_pattern = os.path.join(self.path, path_pattern) + '.*'
+                search_pattern = os.path.join(self.path, path_pattern)
 
-            return glob.glob(search_pattern)
+            result = glob.glob(search_pattern)
+            if result != []:
+                return result
+
+            result = glob.glob(search_pattern+'.*')
+            if result != []:
+                return result
+            
+            return None

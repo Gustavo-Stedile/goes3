@@ -35,7 +35,7 @@ class DownloadManager:
 
     def _get_cached_file(self, file_key: str):
         path = self._temp_path / file_key.split('/')[-1]
-        return xr.open_dataset(path, chunks='auto')
+        return path
 
     async def _download_file(self, file_key: str, event: asyncio.Event):
         try:

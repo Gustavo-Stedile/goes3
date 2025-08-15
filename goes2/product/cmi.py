@@ -76,6 +76,11 @@ class CMI:
     }
 
     @staticmethod
+    def ALL():
+        print(list(CMI.channels.values()))
+        return list(CMI.channels.values())
+
+    @staticmethod
     def in_range(start: int, finish: int):
         return [
             CMI.channels[f'C{i:02.0f}']
