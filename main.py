@@ -8,11 +8,11 @@ from goes2.raster import Image
 
 
 async def main():
-    date = datetime.now(timezone.utc) - timedelta(minutes=20)
+    date = datetime(2025, 8, 14, 19, tzinfo=timezone.utc)
     gen = GOES2(Image('png')).at_date(date).on_projection(WebMercator())
 
     await gen.produce_in_parallel([
-        CMI.in_range(1, 8)
+        CMI.of('C01')
     ])
 
     await gen.dispose()

@@ -15,12 +15,13 @@ class CMI:
             self._range = range
 
         def create(self, data):
-            data = data['CMI']
-            self.apply_palette(
-                data,
+            cmi = data['CMI']
+            colored = self.apply_palette(
+                cmi,
                 self._palette_path,
                 self._range
             )
+            return colored
 
     channels = {
         'C01': Channel(
@@ -75,8 +76,12 @@ class CMI:
     }
 
     @staticmethod
-    def in_range(start, finish):
+    def in_range(start: int, finish: int):
         return [
             CMI.channels[f'C{i:02.0f}']
             for i in range(start, finish+1)
         ]
+
+    @staticmethod
+    def of(band: str):
+        return CMI.channels[band]

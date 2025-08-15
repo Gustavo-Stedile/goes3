@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import Callable, List, Union
+from typing import List, Union
 
 from goes2.geo.projection import Projection, WebMercator
 from .aws import AWSRepository
@@ -8,8 +8,8 @@ from .aws import AWSRepository
 import asyncio
 
 from goes2.product import Product
-
 from goes2.raster import Rasterizer
+from goes2.storage import Storage, TimeSeriesStorage
 
 
 class GOES2:
@@ -18,11 +18,13 @@ class GOES2:
         self._projection = WebMercator()
         self._rasterizer = rasterizer
         self._semaphore = asyncio.Semaphore(2)
+        self._store = TimeSeriesStorage(at='static', max_size=12)
 
     def to(self, rasterizer: Rasterizer):
         self._rasterizer = rasterizer
 
-    def _generate(self, product: Product, data):
+    def _generate(self, product: Product, data, date: datetime):
+
         with ThreadPoolExecutor(max_workers=3) as executor:
             futures = []
             reprojs = []
@@ -36,14 +38,22 @@ class GOES2:
                 reprojs.append(future.result())
 
         result = product.create(*reprojs)
-        self._rasterizer.to_raster(result, 'output.png')
+
+        path = self._store.new(product.name, date)
+        self._rasterizer.to_raster(result, path)
 
     async def _handle_product(self, product: Product, date: datetime):
+        already_exists = self._store.find_by_date(product.name, date, False)
+        print('DO GOES2', already_exists)
+        if already_exists:
+            print(f'{product.name} das {date} já existe')
+            return
+
         data = await self._repo.get(product.uses, date)
 
         async with self._semaphore:
             print(f'produzindo {product}')
-            await asyncio.to_thread(self._generate, product, data)
+            await asyncio.to_thread(self._generate, product, data, date)
 
     def on_projection(self, projection: Projection):
         self._projection = projection
@@ -52,6 +62,9 @@ class GOES2:
     def at_date(self, date: datetime):
         self._date = date
         return self
+
+    def use_store(self, store: Storage):
+        self._store = store
 
     def _flatten_requests(self, products):
         # necessário, pois CMI.in_range retorna uma lista
